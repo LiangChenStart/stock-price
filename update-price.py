@@ -4,14 +4,12 @@ import requests
 from datetime import datetime, timezone
 
 
-# Finnhub API Key
 API_KEY = os.environ.get("FINNHUB_API_KEY")
 
 if not API_KEY:
-    raise Exception("Missing FINNHUB_API_KEY")
+    raise Exception("FINNHUB_API_KEY is missing")
 
 
-# 你的股票列表
 SYMBOLS = [
     "AAPL",
     "INTC",
@@ -24,9 +22,6 @@ SYMBOLS = [
 
 
 def get_price(symbol):
-    """
-    获取 Finnhub 最新价格
-    """
     url = "https://finnhub.io/api/v1/quote"
 
     params = {
@@ -35,20 +30,25 @@ def get_price(symbol):
     }
 
     try:
-        r = requests.get(url, params=params, timeout=10)
-        data = r.json()
+        response = requests.get(
+            url,
+            params=params,
+            timeout=10
+        )
 
-        # Finnhub:
-        # c = current price
+        data = response.json()
+
+        print(symbol, data)
+
         price = data.get("c")
 
-        if price:
+        if price and price > 0:
             return round(price, 4)
 
         return None
 
     except Exception as e:
-        print(symbol, e)
+        print("ERROR:", symbol, e)
         return None
 
 
@@ -56,29 +56,31 @@ def get_price(symbol):
 prices = {}
 
 for symbol in SYMBOLS:
-    price = get_price(symbol)
+    prices[symbol] = get_price(symbol)
 
-    print(symbol, price)
-
-    prices[symbol] = price
 
 
 result = {
-    "update_time": datetime.now(timezone.utc).isoformat(),
+    "update_time": datetime.now(
+        timezone.utc
+    ).isoformat(),
+
     "prices": prices
 }
 
 
-# 创建目录
-os.makedirs("data", exist_ok=True)
+os.makedirs(
+    "data",
+    exist_ok=True
+)
 
 
-# 写入 JSON
 with open(
     "data/prices.json",
     "w",
     encoding="utf-8"
 ) as f:
+
     json.dump(
         result,
         f,
@@ -87,4 +89,4 @@ with open(
     )
 
 
-print("Finished")
+print("DONE")
